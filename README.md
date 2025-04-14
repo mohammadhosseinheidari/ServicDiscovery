@@ -26,18 +26,13 @@ This is a Python-based network service discovery tool that leverages **masscan**
    cd service-discovery-tool
    ```
 
-2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Install `masscan` and `httpx`:
+2. Install `masscan` and `httpx`:
    ```bash
    sudo apt install masscan
    go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
    ```
 
-4. (Optional) Install `cut-cdn` for CDN detection:
+3. (Optional) Install `cut-cdn` for CDN detection:
    ```bash
    go install -v github.com/dwisiswant0/cut-cdn@latest
    ```
