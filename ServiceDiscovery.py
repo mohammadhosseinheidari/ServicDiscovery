@@ -75,23 +75,31 @@ class ServiceDiscovery:
         print(f"[+] Found {len(results)} open ports.")
         return results
 
-    def run_httpx(self, targets: List[str]):
-        """Run httpx on the IPs or domains to gather HTTP information"""
-        print("[*] Running httpx...")
+    def run_httpx(self, target: str, port: str):
+        """Run httpx on a specific IP and port"""
+        print(f"[*] Running httpx on {target}:{port}...")
         cmd = [
             "httpx",
             "-silent",
             "-follow-host-redirects",
             "-title",
             "-status-code",
-            "-tech-detect"
+            "-tech-detect",
+            "-p", port
         ]
         try:
-            process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-            process.communicate(input="\n".join(targets).encode())
+            result = subprocess.run(cmd, input=target.encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                print(result.stdout.decode())
         except Exception as e:
             print(f"[!] Failed to run httpx: {e}")
-        print("[+] httpx finished.")
+
+    def run_httpx_on_all_ports(self, targets: List[str]):
+        """Run httpx on all the open ports for the given IPs"""
+        print("[*] Running httpx on open ports...")
+        for target in targets:
+            ip, port = target.split(":")
+            self.run_httpx(ip, port)
 
     def handle_targets(self):
         """Handle the provided targets (IPs or domains)"""
@@ -116,7 +124,7 @@ class ServiceDiscovery:
                 if ip:
                     self.ips.append(ip)
                 # Run httpx directly on the domain as well
-                self.run_httpx([line])
+                self.run_httpx(line, "")
             elif self.is_ip(line):
                 # Direct IP Address
                 self.ips.append(line)
@@ -143,7 +151,9 @@ class ServiceDiscovery:
         if non_cdns:
             self.run_masscan(non_cdns)
             targets = self.parse_masscan_results()
-            self.run_httpx(targets)
+            if targets:
+                # Run httpx on the IPs with the open ports
+                self.run_httpx_on_all_ports(targets)
 
         print("[✓] Done.")
 
