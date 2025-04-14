@@ -3,6 +3,7 @@ import re
 import argparse
 import socket
 from typing import List, Union
+from urllib.parse import urlparse
 
 class ServiceDiscovery:
     def __init__(self, targets: Union[List[str], str]):
@@ -71,12 +72,11 @@ class ServiceDiscovery:
                     ip = parts[3]
                     port = parts[2]
                     results.append(f"{ip}:{port}")
-                    print(f"[+] Found open port: {ip}:{port}")  # Added print for debugging
         print(f"[+] Found {len(results)} open ports.")
         return results
 
     def run_httpx(self, targets: List[str]):
-        """Run httpx on the IPs to gather HTTP information"""
+        """Run httpx on the IPs or domains to gather HTTP information"""
         print("[*] Running httpx...")
         cmd = [
             "httpx",
@@ -106,18 +106,25 @@ class ServiceDiscovery:
             line = line.strip()
             if not line:
                 continue
-            if self.is_ip(line):
+
+            # If it's a URL (starts with http:// or https://)
+            if line.startswith("http://") or line.startswith("https://"):
+                parsed_url = urlparse(line)
+                domain = parsed_url.netloc
+                print(f"[+] Domain detected: {domain}")
+                ip = self.resolve_domain_to_ip(domain)
+                if ip:
+                    self.ips.append(ip)
+                # Run httpx directly on the domain as well
+                self.run_httpx([line])
+            elif self.is_ip(line):
+                # Direct IP Address
                 self.ips.append(line)
             else:
-                # Resolve domain to IP
+                # Domain that doesn't start with http(s)://
                 ip = self.resolve_domain_to_ip(line)
                 if ip:
-                    # Check if IP belongs to CDN
-                    if self.check_cdn(ip):
-                        print(f"[+] {line} (IP: {ip}) is a CDN. Sending to httpx directly.")
-                        self.run_httpx([line])  # Send domain directly to httpx
-                    else:
-                        self.ips.append(ip)
+                    self.ips.append(ip)
 
     def run_all(self):
         """Run the complete service discovery process"""
