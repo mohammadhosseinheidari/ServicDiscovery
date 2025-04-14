@@ -108,6 +108,3 @@ This tool is intended for authorized network security assessments only. Misuse o
 
 This project is licensed under the [MIT License](LICENSE).
 
-## Contact
-
-If you have any questions or need support, feel free to contact: [your-email@example.com]
